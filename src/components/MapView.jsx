@@ -16,7 +16,7 @@ import Fill from 'ol/style/Fill.js';
 import Stroke from 'ol/style/Stroke.js';
 import Style from 'ol/style/Style.js';
 import TextStyle from 'ol/style/Text.js';
-import { conceptSciencePoints } from '../data/explorationRoutes.js';
+import { conceptSciencePoints } from '../data/scientificPoints.js';
 import { MARS_GEOGRAPHIC, getSceneProjection } from '../map/sceneProjections.js';
 import { namedMarsCraters, normalizeMarsLongitude, perseveranceLandingSite } from '../data/marsFeatures.js';
 import { PLACEHOLDER_PROJECTION } from '../map/marsProjection.js';
@@ -131,7 +131,7 @@ function routeLineStyle(feature) {
     return new Style({ image: new RegularShape({ points: 3, radius: 6, rotation: feature.get('angle') - Math.PI / 2, fill: new Fill({ color }), stroke: new Stroke({ color: '#11172b', width: 1.5 }) }) });
   }
   return new Style({
-    stroke: new Stroke({ color, width: feature.get('routeId') === 'primary' ? 4 : 3, lineDash: feature.get('routeId') === 'primary' ? undefined : [10, 7] }),
+    stroke: new Stroke({ color, width: feature.get('selected') ? 5 : feature.get('routeId') === 'primary' ? 4 : 3, lineDash: feature.get('routeId') === 'primary' ? undefined : [10, 7] }),
     text: new TextStyle({ text: feature.get('name') ?? '', placement: 'line', repeat: true, font: '700 10px "Segoe UI", sans-serif', fill: new Fill({ color: '#fff' }), stroke: new Stroke({ color: '#11172b', width: 4 }) }),
   });
 }
@@ -238,6 +238,7 @@ export default function MapView({
   routeVisibility = {},
   overlayVisibility = {},
   selectedRouteId = 'primary',
+  routesOpen = false,
   onAddRouteWaypoint,
   onMoveRouteWaypoint,
 }) {
@@ -304,8 +305,10 @@ export default function MapView({
   }, [onSelectPoint, scene]);
 
   useEffect(() => {
-    if (mapTool === 'route-edit' && globeMode) enterRasterView();
-  }, [enterRasterView, globeMode, mapTool]);
+    if (!(routesOpen || mapTool === 'route-edit') || !globeMode) return undefined;
+    const transition = window.requestAnimationFrame(() => enterRasterView());
+    return () => window.cancelAnimationFrame(transition);
+  }, [enterRasterView, globeMode, mapTool, routesOpen]);
 
   const handleGlobePick = useCallback(({ latitude, longitude }) => {
     const projection = scene.kind === 'placeholder' ? null : getSceneProjection(scene.projectionCode);
@@ -656,6 +659,7 @@ export default function MapView({
             geometry: new LineString(coordinates),
             featureType: 'route-line',
             routeId,
+            selected: routeId === selectedRouteId,
             routeName: route.name,
             routeType: route.type,
             name: route.name,
@@ -753,7 +757,7 @@ export default function MapView({
     routeLayers.science.setVisible(Boolean(overlayVisibility.science));
     routeLayers.photos.setVisible(Boolean(overlayVisibility.photos));
     Object.entries(routeLayers.zones).forEach(([zoneId, layer]) => layer.setVisible(Boolean(overlayVisibility[zoneId])));
-  }, [customRoutePoints, overlayVisibility, routeVisibility, routes, scene]);
+  }, [customRoutePoints, overlayVisibility, routeVisibility, routes, scene, selectedRouteId]);
 
   useEffect(() => {
     const source = markerSourceRef.current;

@@ -7,7 +7,8 @@ import MissionData from './components/MissionData.jsx';
 import RouteInfoPanel from './components/routes/RouteInfoPanel.jsx';
 import { layerCatalog } from './data/layers.js';
 import { sceneById } from './data/scenes.js';
-import { explorationRoutes, roverPhotographs } from './data/explorationRoutes.js';
+import { explorationRoutes } from './data/explorationRoutes.js';
+import { roverPhotographs } from './data/roverPhotographs.js';
 import { downloadRouteGeoJSON } from './services/marsRoute.js';
 import './styles/global.css';
 
@@ -56,7 +57,7 @@ export default function App() {
   const handleCursorChange = useCallback((position) => setCursor(position), []);
   const handleSelectPoint = useCallback((point) => {
     setSelectedPoint(point);
-    if (point?.routeItemType === 'route' && point.routeId) setSelectedRouteId(point.routeId);
+    if (point?.routeId) setSelectedRouteId(point.routeId);
   }, []);
   const handlePlaceMarker = useCallback((point) => {
     if (!point) return;
@@ -138,6 +139,7 @@ export default function App() {
       id: `custom-waypoint-${Date.now()}-${customRoutePoints.length + 1}`,
       sequence: customRoutePoints.length + 1,
       name: `Waypoint ${customRoutePoints.length + 1}`,
+      routeId: 'custom',
       latitude: point.latitude,
       longitude: point.longitude,
     };
@@ -152,18 +154,25 @@ export default function App() {
     const nextPoints = customRoutePoints.map((point) => point.id === waypointId
       ? { ...point, latitude: geographic.latitude, longitude: geographic.longitude }
       : point);
-    if (nextPoints.some((point, index) => point !== customRoutePoints[index])) commitCustomRoute(nextPoints);
+    if (nextPoints.some((point, index) => point !== customRoutePoints[index])) {
+      commitCustomRoute(nextPoints);
+      setSelectedPoint((current) => current?.id === waypointId
+        ? { ...current, latitude: geographic.latitude, longitude: geographic.longitude, points: nextPoints }
+        : current);
+    }
   }, [commitCustomRoute, customRoutePoints]);
   const handleDeleteRouteWaypoint = useCallback((waypointId) => {
     const nextPoints = customRoutePoints.filter((point) => point.id !== waypointId).map((point, index) => ({ ...point, sequence: index + 1, name: `Waypoint ${index + 1}` }));
     if (nextPoints.length === customRoutePoints.length) return;
     commitCustomRoute(nextPoints);
     setSelectedPoint(null);
+    if (!nextPoints.length) setSelectedRouteId('primary');
   }, [commitCustomRoute, customRoutePoints]);
   const handleClearCustomRoute = useCallback(() => {
     if (!customRoutePoints.length) return;
     commitCustomRoute([]);
     setSelectedPoint(null);
+    setSelectedRouteId('primary');
     setMapTool('inspect');
     setToolMessage('Custom route cleared.');
   }, [commitCustomRoute, customRoutePoints]);
@@ -249,7 +258,7 @@ export default function App() {
     onOpenRoutes: handleOpenRoutes,
     onToggleRoute: (routeId) => setRouteVisibility((visibility) => ({ ...visibility, [routeId]: !visibility[routeId] })),
     onToggleOverlay: (overlayId) => setOverlayVisibility((visibility) => ({ ...visibility, [overlayId]: !visibility[overlayId] })),
-    onSelectRoute: (routeId) => { setSelectedRouteId(routeId); setSelectedPoint(null); },
+    onSelectRoute: (routeId) => { setSelectedRouteId(routeId); setSelectedPoint(null); setRouteVisibility((visibility) => ({ ...visibility, [routeId]: true })); },
     onSpeedChange: setRouteSpeed,
     onStartEdit: handleStartRouteEdit,
     onFinishEdit: handleFinishRouteEdit,
@@ -275,7 +284,7 @@ export default function App() {
         onToggleDetails={() => setDetailsOpen((open) => !open)}
       />
       <main className="workspace" id="explorer" tabIndex={-1}>
-        {layersOpen && <Sidebar activeLayer={activeLayer} onSelectLayer={handleLayerChange} onClose={() => setRoutesOpen(false)} routesOpen={routesOpen} routeControlProps={routeControlProps} />}
+        {layersOpen && <Sidebar activeLayer={activeLayer} onSelectLayer={handleLayerChange} onClose={() => routesOpen ? setRoutesOpen(false) : setLayersOpen(false)} routesOpen={routesOpen} routeControlProps={routeControlProps} />}
         <section className="map-column" aria-label="Mars map workspace">
           <Suspense fallback={<div className="map-frame map-loading" role="status"><span className="status-dot amber" />Loading map controls…</div>}>
             <MapView
@@ -302,6 +311,7 @@ export default function App() {
               routeVisibility={routeVisibility}
               overlayVisibility={overlayVisibility}
               selectedRouteId={selectedRouteId}
+              routesOpen={routesOpen}
               onAddRouteWaypoint={handleAddRouteWaypoint}
               onMoveRouteWaypoint={handleMoveRouteWaypoint}
             />

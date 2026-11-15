@@ -268,7 +268,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--orange-soft); o
 .route-choice-main small, .route-overlay-copy small { color: #9ca9c4; font: 7px var(--mono); line-height: 1.4; }
 .route-swatch { width: 13px; height: 4px; flex: 0 0 13px; border-radius: 4px; background: #ffd24a; box-shadow: 0 0 8px #ffd24a55; }
 .route-alternative .route-swatch { background: #58d9ee; }
-.route-alternative:nth-of-type(3) .route-swatch { background: #b796ff; }
+.route-alternative-a .route-swatch { background: #58d9ee; }
+.route-alternative-b .route-swatch { background: #b796ff; }
 .route-custom .route-swatch { background: #ff9d62; }
 .route-metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 9px 0; }
 .route-metrics-grid > div, .route-overview-metrics > div { display: flex; min-width: 0; flex-direction: column; gap: 5px; padding: 8px; border: 1px solid #ffffff12; border-radius: 9px; background: #10182a88; }

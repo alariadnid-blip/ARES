@@ -1,4 +1,5 @@
 import { summarizeRoute } from '../../services/marsRoute.js';
+import { terrainDataStatus } from '../../data/terrainStatus.js';
 
 function formatDistance(distanceKm) {
   return Number.isFinite(distanceKm) ? `${distanceKm.toFixed(distanceKm < 10 ? 2 : 1)} km` : '—';
@@ -64,7 +65,7 @@ export default function RouteControls({
         {routeList.map((route) => {
           const metrics = summarizeRoute(route.points, speedKmH);
           return (
-            <div className={`route-choice ${selectedRouteId === route.id ? 'is-selected' : ''} route-${route.type}`} key={route.id}>
+            <div className={`route-choice ${selectedRouteId === route.id ? 'is-selected' : ''} route-${route.type} route-${route.id}`} key={route.id}>
               <input type="checkbox" aria-label={`Show ${route.name}`} checked={Boolean(routeVisibility[route.id])} onChange={() => onToggleRoute(route.id)} />
               <button type="button" className="route-choice-main" onClick={() => onSelectRoute(route.id)} aria-pressed={selectedRouteId === route.id}>
                 <span className="route-swatch" />
@@ -89,7 +90,7 @@ export default function RouteControls({
             <span className="route-overlay-copy"><strong>{row.label}</strong><small>{row.hint}</small></span>
           </label>
         ))}
-        <div className="terrain-unknown"><b>UNKNOWN TERRAIN</b><p>No Jezero DEM or supported hazard dataset is installed. Nothing is marked safe. Turning these empty overlays on will not draw fabricated zones.</p></div>
+        <div className="terrain-unknown"><b>UNKNOWN TERRAIN</b><p>{terrainDataStatus.message} Turning these empty overlays on will not draw fabricated zones.</p></div>
       </section>
 
       <section className="route-control-section route-editor-section">

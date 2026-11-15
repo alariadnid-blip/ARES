@@ -1,0 +1,15 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "coordinateSystem": "Mars 2000 geographic, planetocentric latitude; GeoJSON position order [longitude east, latitude] in degrees.",
+    "source": "Labels and approximate coordinates transcribed from the user-supplied ARES concept map. Verify against a georeferenced scientific source before treating these as surveyed points."
+  },
+  "features": [
+    { "type": "Feature", "properties": { "id": "seitah", "name": "Séítah", "classification": "Planning landmark", "verified": false, "description": "Approximate planning landmark transcribed from the supplied concept map." }, "geometry": { "type": "Point", "coordinates": [77.5,18.6] } },
+    { "type": "Feature", "properties": { "id": "south-seitah", "name": "South Séítah", "classification": "Planning landmark", "verified": false, "description": "Approximate planning landmark transcribed from the supplied concept map." }, "geometry": { "type": "Point", "coordinates": [77.5,18.5] } },
+    { "type": "Feature", "properties": { "id": "maaz", "name": "Máaz Formation", "classification": "Planning landmark", "verified": false, "description": "Approximate planning landmark transcribed from the supplied concept map." }, "geometry": { "type": "Point", "coordinates": [77.5,18.4] } },
+    { "type": "Feature", "properties": { "id": "three-forks", "name": "Three Forks", "classification": "Planning landmark", "verified": false, "description": "Approximate planning landmark transcribed from the supplied concept map." }, "geometry": { "type": "Point", "coordinates": [77.7,18.4] } },
+    { "type": "Feature", "properties": { "id": "ancient-delta", "name": "Ancient Delta", "classification": "Planning landmark", "verified": false, "description": "Approximate planning landmark transcribed from the supplied concept map." }, "geometry": { "type": "Point", "coordinates": [77.7,18.5] } },
+    { "type": "Feature", "properties": { "id": "crater-rim", "name": "Crater rim", "classification": "Planning landmark", "verified": false, "description": "Approximate planning landmark transcribed from the supplied concept map." }, "geometry": { "type": "Point", "coordinates": [77.3,18.7] } }
+  ]
+}

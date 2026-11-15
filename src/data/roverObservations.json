@@ -1,0 +1,24 @@
+[
+  {
+    "id": "PIA26378",
+    "title": "Perseverance’s Mid-Climb View of Jezero Crater",
+    "imageUrl": "/data/rover-observations/PIA26378.jpg",
+    "rover": "Perseverance",
+    "camera": "Mastcam-Z",
+    "date": "September 27, 2024 · Sol 1,282",
+    "description": "A 44-frame panorama acquired as Perseverance climbed Jezero’s western rim, near the mission-named Faraway Rock. NASA’s record does not provide a map coordinate for the panorama in the metadata used here, so it is shown in the gallery and is not plotted as a point.",
+    "sourceUrl": "https://science.nasa.gov/resource/perseverances-mid-climb-view-of-jezero-crater/",
+    "credit": "NASA/JPL-Caltech/ASU/MSSS"
+  },
+  {
+    "id": "PIA24744",
+    "title": "The End of One Drive on the Floor of Jezero Crater",
+    "imageUrl": "/data/rover-observations/PIA24744.jpg",
+    "rover": "Perseverance",
+    "camera": "Navigation Cameras (Navcam)",
+    "date": "July 3, 2021 · Sol 131",
+    "description": "A Navcam panorama of a Martian vista on the crater floor; the rover’s tracks from that day’s autonomous drive are visible on the right. Exact observation coordinates are not included in the catalog record used here, so this image is not plotted as a point.",
+    "sourceUrl": "https://photojournal.jpl.nasa.gov/catalog/PIA24744",
+    "credit": "NASA/JPL-Caltech"
+  }
+]

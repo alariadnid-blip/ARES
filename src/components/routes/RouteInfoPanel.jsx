@@ -29,7 +29,7 @@ export default function RouteInfoPanel({ route, speedKmH, selectedItem, photos, 
         <button type="button" className="panel-close" onClick={onClose} aria-label="Hide details panel">×</button>
       </div>
       {selectedPhoto ? <>
-        <figure className="route-photo-detail"><img src={selectedPhoto.imageUrl} alt={selectedPhoto.title} /><figcaption>{selectedPhoto.credit}</figcaption></figure>
+        <figure className="route-photo-detail"><a href={selectedPhoto.imageUrl} target="_blank" rel="noreferrer" aria-label={`Open full-size ${selectedPhoto.id} image`}><img src={selectedPhoto.imageUrl} alt={selectedPhoto.title} /></a><figcaption>{selectedPhoto.credit} · Open image for full size</figcaption></figure>
         <div className="route-detail-card"><span className="route-data-badge">NASA / JPL PHOTOJOURNAL</span><p>{selectedPhoto.description}</p>
           <div className="fact-row"><span>Rover</span><strong>{selectedPhoto.rover}</strong></div>
           <div className="fact-row"><span>Camera</span><strong>{selectedPhoto.camera}</strong></div>
