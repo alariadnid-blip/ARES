@@ -245,6 +245,21 @@ export default function App() {
 
   const activeLayerInfo = layerCatalog.find((layer) => layer.id === activeLayer);
   const activeScene = sceneById(activeSceneId);
+  const activeRoute = selectedRouteId === 'custom'
+    ? (customRoutePoints.length ? 'My custom route' : null)
+    : explorationRoutes.find((route) => route.id === selectedRouteId)?.name;
+  const activeOverlayLabels = [
+    ...(routeVisibility.primary ? ['Primary'] : []),
+    ...(routeVisibility['alternative-a'] ? ['Alt A'] : []),
+    ...(routeVisibility['alternative-b'] ? ['Alt B'] : []),
+    ...(routeVisibility.custom && customRoutePoints.length ? ['Custom'] : []),
+    ...(overlayVisibility.science ? ['POIs'] : []),
+    ...(overlayVisibility.waypoints ? ['Waypoints'] : []),
+    ...(overlayVisibility.photos ? ['Photos (0 geotagged)'] : []),
+    ...(overlayVisibility.safe ? ['Safe candidate (no data)'] : []),
+    ...(overlayVisibility.caution ? ['Caution (no data)'] : []),
+    ...(overlayVisibility.hazard ? ['Hazards (no data)'] : []),
+  ];
   const routeControlProps = {
     routes: explorationRoutes,
     customRoutePoints,
@@ -314,9 +329,10 @@ export default function App() {
               routesOpen={routesOpen}
               onAddRouteWaypoint={handleAddRouteWaypoint}
               onMoveRouteWaypoint={handleMoveRouteWaypoint}
+              roverPhotos={roverPhotographs}
             />
           </Suspense>
-          <BottomPanel activeLayer={activeLayerInfo} cursor={cursor} mapScale={mapScale} mapStatus={mapStatus} />
+          <BottomPanel activeLayer={activeLayerInfo} cursor={cursor} mapScale={mapScale} mapStatus={mapStatus} activeRoute={routesOpen ? activeRoute : null} activeOverlays={activeOverlayLabels} />
         </section>
         {detailsOpen && (routesOpen || selectedPoint?.routeItemType ? (
           <RouteInfoPanel

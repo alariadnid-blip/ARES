@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "test:routes": "node --test src/services/marsRoute.test.js",
+    "test:routes": "node --test src/services/marsRoute.test.js src/services/marsGeoJSON.test.js src/services/routeData.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

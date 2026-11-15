@@ -1,0 +1,10 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "classification": "caution",
+    "status": "no-data",
+    "source": null,
+    "note": "Intentionally empty. No verified caution-zone polygons are supplied."
+  },
+  "features": []
+}

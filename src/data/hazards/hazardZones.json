@@ -1,0 +1,10 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "classification": "hazard",
+    "status": "no-data",
+    "source": null,
+    "note": "Intentionally empty. No verified Jezero hazard polygons are supplied."
+  },
+  "features": []
+}

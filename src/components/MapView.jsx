@@ -17,9 +17,13 @@ import Stroke from 'ol/style/Stroke.js';
 import Style from 'ol/style/Style.js';
 import TextStyle from 'ol/style/Text.js';
 import { conceptSciencePoints } from '../data/scientificPoints.js';
+import safeCandidateZones from '../data/hazards/safeCandidateZones.json';
+import cautionZones from '../data/hazards/cautionZones.json';
+import hazardZones from '../data/hazards/hazardZones.json';
 import { MARS_GEOGRAPHIC, getSceneProjection } from '../map/sceneProjections.js';
 import { namedMarsCraters, normalizeMarsLongitude, perseveranceLandingSite } from '../data/marsFeatures.js';
 import { PLACEHOLDER_PROJECTION } from '../map/marsProjection.js';
+import { readMarsGeoJSON } from '../services/marsGeoJSON.js';
 import useDragPosition from '../hooks/useDragPosition.js';
 import MapTools from './MapTools.jsx';
 import GlobeView from './GlobeView.jsx';
@@ -241,6 +245,7 @@ export default function MapView({
   routesOpen = false,
   onAddRouteWaypoint,
   onMoveRouteWaypoint,
+  roverPhotos = [],
 }) {
   const mapElement = useRef(null);
   const mapInstance = useRef(null);
@@ -369,17 +374,27 @@ export default function MapView({
     }));
     const routeWaypointSource = new VectorSource();
     const routeWaypointLayer = new VectorLayer({ source: routeWaypointSource, style: routeWaypointStyle, declutter: true });
-    routeWaypointLayer.setZIndex(42);
+    // Keep the numbered route stops above the science landmark pins, which often
+    // share the same coordinates in the Jezero planning overlay.
+    routeWaypointLayer.setZIndex(50);
     const customWaypointSource = new VectorSource();
     const customWaypointLayer = new VectorLayer({ source: customWaypointSource, style: routeWaypointStyle, declutter: true });
-    customWaypointLayer.setZIndex(43);
+    customWaypointLayer.setZIndex(51);
     const scienceSource = new VectorSource();
     const scienceLayer = new VectorLayer({ source: scienceSource, style: sciencePointStyle, declutter: true });
     scienceLayer.setZIndex(45);
     const photoSource = new VectorSource();
     const photoLayer = new VectorLayer({ source: photoSource, style: sciencePointStyle, declutter: true });
-    photoLayer.setZIndex(46);
-    const zoneSources = Object.fromEntries(['safe', 'caution', 'hazard'].map((zoneId) => [zoneId, new VectorSource()]));
+    photoLayer.setZIndex(49);
+    const zoneCollections = { safe: safeCandidateZones, caution: cautionZones, hazard: hazardZones };
+    const zoneSources = Object.fromEntries(Object.entries(zoneCollections).map(([zoneId, collection]) => {
+      const features = readMarsGeoJSON(collection, projection, { featureType: 'hazard-zone' });
+      features.forEach((feature) => {
+        if (!feature.get('classification')) feature.set('classification', zoneId, true);
+        if (!feature.get('dataSource') && collection.metadata?.source) feature.set('dataSource', collection.metadata.source, true);
+      });
+      return [zoneId, new VectorSource({ features })];
+    }));
     const zoneLayers = Object.fromEntries(['safe', 'caution', 'hazard'].map((zoneId, index) => {
       const layer = new VectorLayer({ source: zoneSources[zoneId], style: zoneStyle });
       layer.setZIndex(25 + index);
@@ -431,12 +446,13 @@ export default function MapView({
       }
       const routeFeature = map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
         if (layer === routeWaypointLayer || layer === customWaypointLayer || layer === scienceLayer || layer === photoLayer) return feature;
+        if (Object.values(zoneLayers).includes(layer)) return feature;
         if (Object.values(routeLineLayers).includes(layer) && feature.get('featureType') === 'route-line') return feature;
         return undefined;
       }, { hitTolerance: 6 });
       if (routeFeature) {
         const featureType = routeFeature.get('featureType');
-        const routeItemType = featureType === 'science-point' ? 'science-point' : featureType === 'rover-photo' ? 'rover-photo' : featureType === 'route-line' ? 'route' : 'waypoint';
+        const routeItemType = featureType === 'science-point' ? 'science-point' : featureType === 'rover-photo' ? 'rover-photo' : featureType === 'route-line' ? 'route' : featureType === 'hazard-zone' ? 'hazard-zone' : 'waypoint';
         const featureGeometry = routeFeature.getGeometry();
         const featureCoordinate = featureGeometry.getType() === 'Point' ? featureGeometry.getCoordinates() : event.coordinate;
         handlers.onSelectPoint?.({
@@ -460,6 +476,13 @@ export default function MapView({
           isCustom: routeFeature.get('isCustom'),
           points: routeFeature.get('routePoints'),
           photo: routeFeature.get('photo'),
+          classification: routeFeature.get('classification'),
+          hazardType: routeFeature.get('hazardType'),
+          dataSource: routeFeature.get('dataSource'),
+          zoneSourceUrl: routeFeature.get('sourceUrl'),
+          dataResolution: routeFeature.get('dataResolution'),
+          confidence: routeFeature.get('confidence'),
+          zoneExtent: routeFeature.getGeometry().getExtent(),
         });
         return;
       }
@@ -748,6 +771,7 @@ export default function MapView({
       longitude: point.longitude,
       description: point.description,
       significance: point.significance,
+      classification: point.classification,
       source: point.source,
       routeItemType: 'science-point',
       verified: false,
@@ -757,7 +781,20 @@ export default function MapView({
     routeLayers.science.setVisible(Boolean(overlayVisibility.science));
     routeLayers.photos.setVisible(Boolean(overlayVisibility.photos));
     Object.entries(routeLayers.zones).forEach(([zoneId, layer]) => layer.setVisible(Boolean(overlayVisibility[zoneId])));
-  }, [customRoutePoints, overlayVisibility, routeVisibility, routes, scene, selectedRouteId]);
+    const photoFeatures = roverPhotos
+      .filter((photo) => photo.coordinateVerified === true && photo.coordinateSource && Number.isFinite(photo.latitude) && Number.isFinite(photo.longitude))
+      .map((photo) => new Feature({
+        geometry: new Point(toMapCoordinate({ latitude: photo.latitude, longitude: photo.longitude })),
+        featureType: 'rover-photo',
+        id: photo.id,
+        name: photo.title,
+        latitude: photo.latitude,
+        longitude: photo.longitude,
+        photo,
+      }));
+    sources.photos.clear(true);
+    sources.photos.addFeatures(photoFeatures);
+  }, [customRoutePoints, overlayVisibility, routeVisibility, roverPhotos, routes, scene, selectedRouteId]);
 
   useEffect(() => {
     const source = markerSourceRef.current;

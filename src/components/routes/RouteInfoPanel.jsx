@@ -14,18 +14,20 @@ export default function RouteInfoPanel({ route, speedKmH, selectedItem, photos, 
   const { ref, style, dragging, dragHandleProps } = useDragPosition();
   const selectedPhoto = selectedItem?.routeItemType === 'rover-photo' ? selectedItem.photo : null;
   const selectedWaypoint = selectedItem?.routeItemType === 'waypoint' || selectedItem?.routeItemType === 'science-point' ? selectedItem : null;
+  const selectedZone = selectedItem?.routeItemType === 'hazard-zone' ? selectedItem : null;
+  const selectedMapPoint = selectedItem && !selectedPhoto && !selectedWaypoint && !selectedZone && selectedItem.routeItemType !== 'route' ? selectedItem : null;
   const selectedRoute = selectedItem?.routeId ? selectedItem : route;
   const selectedItemIndex = selectedWaypoint && selectedRoute?.points ? selectedRoute.points.findIndex((item) => item.id === selectedWaypoint.waypointId || item.id === selectedWaypoint.id) : -1;
   const previous = selectedItemIndex > 0 ? selectedRoute.points[selectedItemIndex - 1] : null;
   const segmentKm = previous && selectedWaypoint ? summarizeRoute([previous, selectedWaypoint]).distanceKm : null;
   const metrics = summarizeRoute(route?.points ?? [], speedKmH);
-  const heading = selectedPhoto?.title ?? selectedWaypoint?.name ?? route?.name ?? 'Exploration routes';
+  const heading = selectedPhoto?.title ?? selectedWaypoint?.name ?? selectedZone?.name ?? selectedMapPoint?.featureName ?? (selectedMapPoint ? 'Selected map coordinate' : route?.name) ?? 'Exploration routes';
 
   return (
     <aside ref={ref} style={style} className={`info-panel floating-panel route-info-panel ${dragging ? 'is-dragging' : ''}`} id="location-details" tabIndex={-1} aria-label="Route and selected location details">
       <div className="info-heading panel-drag-handle" {...dragHandleProps}>
         <span className="panel-grip" aria-hidden="true">⠿</span>
-        <div><span className="eyebrow">{selectedPhoto ? 'NASA PHOTO RECORD' : selectedWaypoint ? 'ROUTE WAYPOINT' : 'ROUTE OVERVIEW'}</span><h2>{heading}</h2></div>
+        <div><span className="eyebrow">{selectedPhoto ? 'NASA PHOTO RECORD' : selectedWaypoint ? 'ROUTE WAYPOINT' : selectedZone ? 'TERRAIN CLASSIFICATION' : selectedMapPoint ? 'MAP LOCATION' : 'ROUTE OVERVIEW'}</span><h2>{heading}</h2></div>
         <button type="button" className="panel-close" onClick={onClose} aria-label="Hide details panel">×</button>
       </div>
       {selectedPhoto ? <>
@@ -37,11 +39,28 @@ export default function RouteInfoPanel({ route, speedKmH, selectedItem, photos, 
           <div className="fact-row"><span>Coordinates</span><strong>Not in source record</strong></div>
           <a className="route-source-link" href={selectedPhoto.sourceUrl} target="_blank" rel="noreferrer">Open original NASA record ↗</a>
         </div>
-      </> : selectedWaypoint ? <div className="route-detail-card">
+      </> : selectedZone ? <div className="route-detail-card route-zone-detail">
+        <span className={`route-data-badge ${selectedZone.classification === 'hazard' ? 'hazard' : selectedZone.classification === 'safe' ? 'verified' : 'approximate'}`}>{selectedZone.classification?.toUpperCase() ?? 'TERRAIN ZONE'}</span>
+        <p>{selectedZone.description ?? 'Terrain classification from a supplied GeoJSON layer.'}</p>
+        <div className="location-coordinates"><span>LATITUDE</span><strong>{coordinate(selectedZone.latitude, 'N', 'S')}</strong><span>LONGITUDE</span><strong>{coordinate(selectedZone.longitude, 'E', 'W')}</strong></div>
+        <div className="fact-row"><span>Type</span><strong>{selectedZone.hazardType ?? selectedZone.classification}</strong></div>
+        <div className="fact-row"><span>Dataset</span><strong>{selectedZone.dataSource ?? selectedZone.source ?? 'No source supplied'}</strong></div>
+        <div className="fact-row"><span>Resolution</span><strong>{selectedZone.dataResolution ?? 'Not specified'}</strong></div>
+        <div className="fact-row"><span>Confidence</span><strong>{selectedZone.confidence ?? 'Not specified'}</strong></div>
+        <div className="route-unknown-card"><p>A mapped classification is a planning aid and is not a guarantee of astronaut safety.</p></div>
+        {selectedZone.zoneSourceUrl && <a className="route-source-link" href={selectedZone.zoneSourceUrl} target="_blank" rel="noreferrer">Open dataset source ↗</a>}
+      </div> : selectedMapPoint ? <div className="route-detail-card">
+        <span className="route-data-badge">SELECTED MAP LOCATION</span>
+        <div className="location-coordinates"><span>LATITUDE</span><strong>{coordinate(selectedMapPoint.latitude, 'N', 'S')}</strong><span>LONGITUDE</span><strong>{coordinate(selectedMapPoint.longitude, 'E', 'W')}</strong></div>
+        {selectedMapPoint.featureType && <div className="fact-row"><span>Feature</span><strong>{selectedMapPoint.featureType}</strong></div>}
+        {selectedMapPoint.featureDiameterKm && <div className="fact-row"><span>Diameter</span><strong>{selectedMapPoint.featureDiameterKm.toFixed(2)} km</strong></div>}
+        {selectedMapPoint.featureSourceUrl && <a className="route-source-link" href={selectedMapPoint.featureSourceUrl} target="_blank" rel="noreferrer">Open source record ↗</a>}
+      </div> : selectedWaypoint ? <div className="route-detail-card">
         <span className={`route-data-badge ${selectedWaypoint.verified ? 'verified' : 'approximate'}`}>{selectedWaypoint.verified ? 'VERIFIED LANDING SITE' : 'APPROXIMATE CONCEPT LOCATION'}</span>
         <div className="location-coordinates"><span>LATITUDE</span><strong>{coordinate(selectedWaypoint.latitude, 'N', 'S')}</strong><span>LONGITUDE</span><strong>{coordinate(selectedWaypoint.longitude, 'E', 'W')}</strong></div>
         {selectedWaypoint.sequence && <div className="fact-row"><span>Sequence</span><strong>{selectedWaypoint.sequence}</strong></div>}
         {selectedWaypoint.routeName && <div className="fact-row"><span>Route</span><strong>{selectedWaypoint.routeName}</strong></div>}
+        {selectedWaypoint.classification && <div className="fact-row"><span>Point class</span><strong>{selectedWaypoint.classification}</strong></div>}
         <div className="fact-row"><span>From previous</span><strong>{formatDistance(segmentKm)}</strong></div>
         <div className="fact-row"><span>Terrain</span><strong>Unknown · no DEM</strong></div>
         <p>{selectedWaypoint.description ?? selectedWaypoint.significance}</p>

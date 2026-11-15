@@ -8,9 +8,14 @@ function formatDistance(distanceKm) {
 function formatDuration(hours) {
   if (!Number.isFinite(hours)) return '—';
   if (hours < 24) return `${hours.toFixed(1)} h`;
-  const days = Math.floor(hours / 24);
-  const remaining = Math.round(hours % 24);
+  const totalHours = Math.round(hours);
+  const days = Math.floor(totalHours / 24);
+  const remaining = totalHours % 24;
   return `${days} d ${remaining} h`;
+}
+
+function formatCoordinate(value, positive, negative) {
+  return `${Math.abs(value).toFixed(3)}°${value < 0 ? negative : positive}`;
 }
 
 const overlayRows = [
@@ -46,6 +51,7 @@ export default function RouteControls({
   onSelectPhoto,
   photos,
 }) {
+  const geolocatedPhotoCount = photos.filter((photo) => photo.coordinateVerified === true && photo.coordinateSource && Number.isFinite(photo.latitude) && Number.isFinite(photo.longitude)).length;
   const customRoute = { id: 'custom', name: 'My custom route', type: 'custom', status: 'custom', points: customRoutePoints };
   const routeList = [...routes, ...(customRoutePoints.length ? [customRoute] : [])];
   const selectedRoute = routeList.find((route) => route.id === selectedRouteId) ?? routes[0];
@@ -87,7 +93,7 @@ export default function RouteControls({
           <label className="route-overlay-row" key={row.id}>
             <input type="checkbox" checked={Boolean(overlayVisibility[row.id])} onChange={() => onToggleOverlay(row.id)} />
             <span className={`overlay-swatch ${row.color}`} />
-            <span className="route-overlay-copy"><strong>{row.label}</strong><small>{row.hint}</small></span>
+            <span className="route-overlay-copy"><strong>{row.label}</strong><small>{row.id === 'photos' ? `${geolocatedPhotoCount} photos with verified coordinates` : row.hint}</small></span>
           </label>
         ))}
         <div className="terrain-unknown"><b>UNKNOWN TERRAIN</b><p>{terrainDataStatus.message} Turning these empty overlays on will not draw fabricated zones.</p></div>
@@ -107,7 +113,7 @@ export default function RouteControls({
           <div className="route-section-heading"><h4>MY WAYPOINTS</h4><span>{customRoutePoints.length}</span></div>
           {customRoutePoints.map((point, index) => (
             <div className="route-waypoint-row" key={point.id}>
-              <button type="button" onClick={() => onSelectWaypoint({ ...point, isCustom: true, routeName: 'My custom route' })}><i>{index + 1}</i><span><strong>{point.name || `Waypoint ${index + 1}`}</strong><small>{point.latitude.toFixed(3)}°N · {point.longitude.toFixed(3)}°E</small></span></button>
+              <button type="button" onClick={() => onSelectWaypoint({ ...point, isCustom: true, routeName: 'My custom route' })}><i>{index + 1}</i><span><strong>{point.name || `Waypoint ${index + 1}`}</strong><small>{formatCoordinate(point.latitude, 'N', 'S')} · {formatCoordinate(point.longitude, 'E', 'W')}</small></span></button>
               <button type="button" className="route-waypoint-delete" onClick={() => onDeleteWaypoint(point.id)} aria-label={`Delete waypoint ${index + 1}`}>×</button>
             </div>
           ))}
@@ -116,7 +122,7 @@ export default function RouteControls({
 
       <section className="route-control-section route-photo-section">
         <div className="route-section-heading"><h4>NASA ROVER IMAGERY</h4><span>{photos.length} PHOTOS</span></div>
-        <p>Authentic Jezero panoramas. Their observation coordinates are not published with these records, so no camera pins appear on the map.</p>
+        <p>Authentic Jezero panoramas. Only photos with coordinates verified in their NASA record receive camera pins; currently {geolocatedPhotoCount} are geolocated.</p>
         <div className="route-photo-list">
           {photos.map((photo) => <button type="button" className="route-photo-card" key={photo.id} onClick={() => onSelectPhoto(photo)}>
             <img src={photo.imageUrl} alt="" loading="lazy" />

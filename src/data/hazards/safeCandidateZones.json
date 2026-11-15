@@ -1,0 +1,10 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "classification": "safe-candidate",
+    "status": "no-data",
+    "source": null,
+    "note": "Intentionally empty. No Jezero DEM or verified terrain-suitability polygons are supplied. Unknown terrain must not be treated as safe."
+  },
+  "features": []
+}
